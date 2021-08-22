@@ -1,0 +1,23 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t pauldhill/react-test -f ./client/Dockerfile.dev ./client
+
+
+script:
+  - docker run -e CI=true pauldhill/react-test npm test
+
+after_success:
+  - docker build -t pauldhill/multi-client ./client
+  - docker build -t pauldhill/multi-nginx ./nginx
+  - docker build -t pauldhill/multi-server ./server
+  - docker build -t pauldhill/multi-worker ./worker
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push pauldhill/multi-client
+  - docker push pauldhill/multi-nginx
+  - docker push pauldhill/multi-server
+  - docker push pauldhill/multi-worker
